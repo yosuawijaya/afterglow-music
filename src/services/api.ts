@@ -1,5 +1,5 @@
-// API Base URL - menggunakan Vite proxy untuk development
-const API_BASE_URL = '/api';
+// API Base URL - menggunakan environment variable untuk production, fallback ke proxy untuk development
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Types
 export interface HeroSlide {
