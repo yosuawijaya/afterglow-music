@@ -138,21 +138,31 @@ const Admin = () => {
       is_banner: formData.get('is_banner') === 'on'
     }
 
+    console.log('Saving slide data:', slideData)
+
+    // Validate required fields
+    if (!slideData.image || !slideData.cover) {
+      alert('Please upload both background image and album cover')
+      return
+    }
+
     try {
       if (editingSlide) {
         const updated = await slidesAPI.update(editingSlide.id, slideData)
         setSlides(slides.map(s => s.id === editingSlide.id ? updated : s))
+        alert('Slide updated successfully!')
       } else {
         const created = await slidesAPI.create(slideData)
         setSlides([...slides, created])
+        alert('Slide created successfully!')
       }
       setShowSlideForm(false)
       setEditingSlide(null)
       setSlideImageUrl('')
       setSlideCoverUrl('')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save slide:', error)
-      alert('Failed to save slide')
+      alert(`Failed to save slide: ${error.message || 'Unknown error'}`)
     }
   }
 
