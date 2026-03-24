@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Home, Music, ArrowLeft } from 'lucide-react'
+import { Home, Music } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './NotFound.css'
 

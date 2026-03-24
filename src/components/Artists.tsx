@@ -5,7 +5,6 @@ import './Artists.css'
 
 const Artists = () => {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, amount: 0.2 })
   const [artists, setArtists] = useState<Artist[]>([])
   const [loading, setLoading] = useState(true)
 
