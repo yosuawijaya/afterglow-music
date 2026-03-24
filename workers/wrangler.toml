@@ -1,0 +1,20 @@
+name = "afterglow-music-api"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "afterglow-music-db"
+database_id = "79a406c8-9d9b-4bd9-8078-7978644194c7"
+
+[vars]
+ENVIRONMENT = "production"
+# Email notification recipient - ganti dengan email kamu
+NOTIFICATION_EMAIL = "your-email@example.com"
+
+# CORS settings
+[env.production]
+name = "afterglow-music-api"
+
+[env.development]
+name = "afterglow-music-api-dev"

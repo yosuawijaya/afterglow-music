@@ -1,0 +1,140 @@
+.contact {
+  text-align: center;
+  background: var(--dark-bg);
+  position: relative;
+  padding: 6rem 0;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.contact .container {
+  max-width: 900px !important;
+  margin: 0 auto !important;
+  width: 100%;
+}
+
+.contact .section-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  display: block;
+}
+
+.contact-text {
+  font-size: 1.2rem;
+  color: var(--gray-text);
+  margin: 1.5rem auto 1rem;
+  font-weight: 400;
+  max-width: 700px;
+  line-height: 1.8;
+}
+
+.contact-subtext {
+  font-size: 1.05rem;
+  color: var(--gray-text);
+  margin-bottom: 3.5rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 3rem;
+}
+
+.social-link {
+  color: var(--light-text);
+  text-decoration: none;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  background: var(--card-bg);
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.social-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  transition: filter 0.3s ease;
+}
+
+.social-link:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(255, 107, 53, 0.4);
+}
+
+.social-link:hover .social-icon {
+  filter: brightness(0) invert(1);
+}
+
+.social-link:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+}
+
+.contact-cta {
+  margin-top: 2.5rem;
+}
+
+.cta-button {
+  display: inline-block;
+  padding: 1.25rem 3.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--light-text);
+  background: var(--primary-color);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+  transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.5);
+}
+
+@media (max-width: 768px) {
+  .contact {
+    padding: 4rem 0;
+  }
+
+  .contact-text {
+    font-size: 1rem;
+  }
+
+  .social-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .social-link {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .cta-button {
+    padding: 1rem 2.5rem;
+    font-size: 0.95rem;
+  }
+}

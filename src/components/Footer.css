@@ -1,0 +1,28 @@
+.footer {
+  background: var(--darker-bg);
+  padding: 2rem 0;
+  text-align: center;
+  border-top: 1px solid var(--border-color);
+}
+
+.footer-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.footer-copyright {
+  color: var(--gray-text);
+  font-size: 0.9rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 1.5rem 0;
+  }
+
+  .footer-copyright {
+    font-size: 0.85rem;
+  }
+}
