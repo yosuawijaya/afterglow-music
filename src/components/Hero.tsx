@@ -105,7 +105,7 @@ const Hero = () => {
               >
                 <img 
                   key={`cover-${currentSlide}`}
-                  src={`/api/proxy-image?url=${encodeURIComponent(slides[currentSlide].cover)}`} 
+                  src={slides[currentSlide].cover} 
                   alt="Album Cover" 
                 />
               </motion.div>
