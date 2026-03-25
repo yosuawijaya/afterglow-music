@@ -77,3 +77,8 @@ Sekarang setiap ada submission baru, Anda akan dapat email dengan format:
 **Mau ganti email service?**
 - Bisa pakai SendGrid, Mailgun, atau SMTP lainnya
 - Lihat contoh di `EMAIL_SETUP.md`
+
+**Reply email tidak berfungsi?**
+- Lihat `TROUBLESHOOTING_REPLY.md` untuk panduan lengkap
+- Test endpoint: `./test-reply-endpoint.sh`
+- Check worker logs: `cd workers && npx wrangler tail`

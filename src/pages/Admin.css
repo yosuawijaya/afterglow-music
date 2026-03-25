@@ -113,8 +113,9 @@
 .admin-main {
   flex: 1;
   margin-left: 260px;
-  padding: 2.5rem;
+  padding: 2rem 3rem;
   background: #f8f9fa;
+  min-height: 100vh;
 }
 
 .admin-header {
@@ -167,7 +168,8 @@
 }
 
 .admin-content {
-  max-width: 1200px;
+  max-width: 100%;
+  width: 100%;
 }
 
 /* Artists Table */
@@ -215,6 +217,9 @@ td {
 .actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 260px;
 }
 
 .btn-edit,
@@ -512,4 +517,368 @@ td {
   margin-top: 1em;
   margin-bottom: 0.5em;
   font-weight: 700;
+}
+
+/* Submissions Table */
+.submissions-table {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  width: 100%;
+}
+
+.submissions-table table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  min-width: 1200px;
+}
+
+.submissions-table thead {
+  background: #f9fafb;
+}
+
+.submissions-table th {
+  padding: 1rem 0.875rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.submissions-table th:last-child {
+  min-width: 260px;
+}
+
+.submissions-table td {
+  padding: 1rem 0.875rem;
+  color: #6b7280;
+  border-top: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.submissions-table .artist-name {
+  color: #1a1a1a;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Custom Status Dropdown */
+.status-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.status-button {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.125rem;
+  border-radius: 10px;
+  border: 2px solid;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fff;
+  min-width: 150px;
+  justify-content: space-between;
+  letter-spacing: 0.01em;
+}
+
+.status-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.status-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.status-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status-button .status-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.status-button .status-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.status-button .status-text {
+  flex: 1;
+  text-align: left;
+  font-size: 0.9375rem;
+}
+
+.status-button .status-arrow {
+  opacity: 0.5;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.status-button .status-arrow svg {
+  width: 16px;
+  height: 16px;
+}
+
+.status-button:hover:not(:disabled) .status-arrow {
+  opacity: 0.8;
+  transform: translateY(2px);
+}
+
+/* Status Colors - More Professional */
+.status-button.status-pending {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fbbf24;
+}
+
+.status-button.status-pending:hover:not(:disabled) {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.status-button.status-reviewed {
+  background: #eff6ff;
+  color: #1e40af;
+  border-color: #60a5fa;
+}
+
+.status-button.status-reviewed:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.status-button.status-accepted {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #4ade80;
+}
+
+.status-button.status-accepted:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #22c55e;
+}
+
+.status-button.status-rejected {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #f87171;
+}
+
+.status-button.status-rejected:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+/* Dropdown Menu */
+.status-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 0.5rem;
+  min-width: 180px;
+  z-index: 1000;
+  animation: dropdownSlideIn 0.15s ease;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.status-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-align: left;
+  color: #374151;
+}
+
+.status-option .status-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.status-option .status-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.status-option:hover {
+  transform: translateX(3px);
+}
+
+.status-option.status-pending:hover {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.status-option.status-reviewed:hover {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.status-option.status-accepted:hover {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.status-option.status-rejected:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Remove old select styles */
+.status-select {
+  display: none;
+}
+
+.btn-view,
+.btn-reply,
+.btn-listen {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-view {
+  background: rgba(107, 114, 128, 0.1);
+  color: #4b5563;
+}
+
+.btn-view:hover {
+  background: rgba(107, 114, 128, 0.2);
+}
+
+.btn-reply {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.btn-reply:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.btn-listen {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.btn-listen:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+/* Reply form specific styling */
+.modal-content form textarea {
+  font-family: 'Courier New', monospace;
+  line-height: 1.6;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Checkbox styling */
+.checkbox-group {
+  margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  position: relative;
+  margin-top: 2px;
+}
+
+.checkbox-input:checked + .checkbox-custom {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkbox-input:checked + .checkbox-custom::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.checkbox-text strong {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.checkbox-text small {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-style: normal;
 }

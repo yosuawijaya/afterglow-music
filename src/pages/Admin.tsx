@@ -1,18 +1,39 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Film, Disc, Users, FileText, Settings, ArrowLeft, LogOut, Newspaper } from 'lucide-react'
+import { Film, Disc, Users, FileText, Settings, ArrowLeft, LogOut, Newspaper, Mail, Clock, Eye, CheckCircle, XCircle, ChevronDown } from 'lucide-react'
 import { slidesAPI, releasesAPI, artistsAPI, newsAPI, HeroSlide, Release, Artist, News } from '../services/api'
 import ImageUpload from '../components/ImageUpload'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
+import toast, { Toaster } from 'react-hot-toast'
 import './Admin.css'
 
+interface Submission {
+  id: number
+  fullName: string
+  email: string
+  phone: string
+  dateOfBirth: string
+  placeOfBirth: string
+  artistName: string
+  genre: string
+  bio: string
+  catalog?: string
+  songTitle: string
+  songLink: string
+  lyrics?: string
+  notes?: string
+  status: string
+  createdAt: string
+}
+
 const Admin = () => {
-  const [activeTab, setActiveTab] = useState<'slides' | 'releases' | 'artists' | 'news' | 'content' | 'settings'>('slides')
+  const [activeTab, setActiveTab] = useState<'slides' | 'releases' | 'artists' | 'news' | 'submissions' | 'content' | 'settings'>('slides')
   const [artists, setArtists] = useState<Artist[]>([])
   const [slides, setSlides] = useState<HeroSlide[]>([])
   const [releases, setReleases] = useState<Release[]>([])
   const [news, setNews] = useState<News[]>([])
+  const [submissions, setSubmissions] = useState<Submission[]>([])
   
   const [editingArtist, setEditingArtist] = useState<Artist | null>(null)
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null)
@@ -22,6 +43,12 @@ const Admin = () => {
   const [showSlideForm, setShowSlideForm] = useState(false)
   const [showReleaseForm, setShowReleaseForm] = useState(false)
   const [showNewsForm, setShowNewsForm] = useState(false)
+  const [showReplyForm, setShowReplyForm] = useState(false)
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
+  const [replyMessage, setReplyMessage] = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
+  const [openStatusDropdown, setOpenStatusDropdown] = useState<number | null>(null)
   
   // Image URLs for forms
   const [slideImageUrl, setSlideImageUrl] = useState('')
@@ -39,7 +66,21 @@ const Admin = () => {
     if (activeTab === 'releases') loadReleases()
     if (activeTab === 'artists') loadArtists()
     if (activeTab === 'news') loadNews()
+    if (activeTab === 'submissions') loadSubmissions()
   }, [activeTab])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('.status-dropdown-wrapper')) {
+        setOpenStatusDropdown(null)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Load functions
   const loadSlides = async () => {
@@ -82,14 +123,28 @@ const Admin = () => {
     }
   }
 
+  const loadSubmissions = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL.replace('/api', '')
+      const response = await fetch(`${apiUrl}/api/submissions`)
+      if (!response.ok) throw new Error('Failed to fetch submissions')
+      const data = await response.json()
+      setSubmissions(data)
+    } catch (error) {
+      console.error('Failed to load submissions:', error)
+      alert('Failed to load submissions.')
+    }
+  }
+
   const handleDeleteArtist = async (id: number) => {
     if (confirm('Are you sure you want to delete this artist?')) {
       try {
         await artistsAPI.delete(id)
         setArtists(artists.filter(a => a.id !== id))
+        toast.success('Artist deleted successfully!')
       } catch (error) {
         console.error('Failed to delete artist:', error)
-        alert('Failed to delete artist')
+        toast.error('Failed to delete artist')
       }
     }
   }
@@ -114,16 +169,18 @@ const Admin = () => {
       if (editingArtist) {
         const updated = await artistsAPI.update(editingArtist.id, artistData)
         setArtists(artists.map(a => a.id === editingArtist.id ? updated : a))
+        toast.success('Artist updated successfully!')
       } else {
         const created = await artistsAPI.create(artistData)
         setArtists([...artists, created])
+        toast.success('Artist created successfully!')
       }
       setShowAddForm(false)
       setEditingArtist(null)
       setArtistImageUrl('')
     } catch (error) {
       console.error('Failed to save artist:', error)
-      alert('Failed to save artist')
+      toast.error('Failed to save artist')
     }
   }
 
@@ -132,9 +189,10 @@ const Admin = () => {
       try {
         await slidesAPI.delete(id)
         setSlides(slides.filter(s => s.id !== id))
+        toast.success('Slide deleted successfully!')
       } catch (error) {
         console.error('Failed to delete slide:', error)
-        alert('Failed to delete slide')
+        toast.error('Failed to delete slide')
       }
     }
   }
@@ -162,7 +220,7 @@ const Admin = () => {
 
     // Validate required fields
     if (!slideData.image || !slideData.cover) {
-      alert('Please upload both background image and album cover')
+      toast.error('Please upload both background image and album cover')
       return
     }
 
@@ -170,11 +228,11 @@ const Admin = () => {
       if (editingSlide) {
         const updated = await slidesAPI.update(editingSlide.id, slideData)
         setSlides(slides.map(s => s.id === editingSlide.id ? updated : s))
-        alert('Slide updated successfully!')
+        toast.success('Slide updated successfully!')
       } else {
         const created = await slidesAPI.create(slideData)
         setSlides([...slides, created])
-        alert('Slide created successfully!')
+        toast.success('Slide created successfully!')
       }
       setShowSlideForm(false)
       setEditingSlide(null)
@@ -182,7 +240,7 @@ const Admin = () => {
       setSlideCoverUrl('')
     } catch (error: any) {
       console.error('Failed to save slide:', error)
-      alert(`Failed to save slide: ${error.message || 'Unknown error'}`)
+      toast.error(`Failed to save slide: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -191,9 +249,10 @@ const Admin = () => {
       try {
         await releasesAPI.delete(id)
         setReleases(releases.filter(r => r.id !== id))
+        toast.success('Release deleted successfully!')
       } catch (error) {
         console.error('Failed to delete release:', error)
-        alert('Failed to delete release')
+        toast.error('Failed to delete release')
       }
     }
   }
@@ -219,14 +278,14 @@ const Admin = () => {
       if (editingRelease) {
         const updated = await releasesAPI.update(editingRelease.id, releaseData)
         setReleases(releases.map(r => r.id === editingRelease.id ? updated : r))
-        alert('Release updated successfully!')
+        toast.success('Release updated successfully!')
       } else {
         const created = await releasesAPI.create(releaseData)
         setReleases([...releases, created])
         if (releaseData.createNews) {
-          alert('Release and news created successfully!')
+          toast.success('Release and news created successfully!')
         } else {
-          alert('Release created successfully!')
+          toast.success('Release created successfully!')
         }
       }
       setShowReleaseForm(false)
@@ -234,7 +293,7 @@ const Admin = () => {
       setReleaseArtworkUrl('')
     } catch (error) {
       console.error('Failed to save release:', error)
-      alert('Failed to save release')
+      toast.error('Failed to save release')
     }
   }
 
@@ -244,9 +303,10 @@ const Admin = () => {
       try {
         await newsAPI.delete(id)
         setNews(news.filter(n => n.id !== id))
+        toast.success('News deleted successfully!')
       } catch (error) {
         console.error('Failed to delete news:', error)
-        alert('Failed to delete news')
+        toast.error('Failed to delete news')
       }
     }
   }
@@ -281,11 +341,11 @@ const Admin = () => {
       if (editingNews) {
         const updated = await newsAPI.update(editingNews.id!, newsData)
         setNews(news.map(n => n.id === editingNews.id ? updated : n))
-        alert('News updated successfully!')
+        toast.success('News updated successfully!')
       } else {
         const created = await newsAPI.create(newsData)
         setNews([created, ...news])
-        alert('News created successfully!')
+        toast.success('News created successfully!')
       }
       setShowNewsForm(false)
       setEditingNews(null)
@@ -293,12 +353,147 @@ const Admin = () => {
       setNewsContent('')
     } catch (error) {
       console.error('Failed to save news:', error)
-      alert('Failed to save news')
+      toast.error('Failed to save news')
     }
+  }
+
+  // Submission handlers
+  const handleReplySubmission = (submission: Submission) => {
+    setSelectedSubmission(submission)
+    setReplyMessage(`Hi ${submission.fullName},\n\nTerima kasih telah mengirimkan demo "${submission.songTitle}" ke Afterglow Music.\n\n`)
+    setShowReplyForm(true)
+  }
+
+  const handleSendReply = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!selectedSubmission) return
+
+    setSendingReply(true)
+    try {
+      // VITE_API_URL already includes /api, so we don't add it again
+      const apiUrl = import.meta.env.VITE_API_URL.replace('/api', '')
+      const response = await fetch(`${apiUrl}/api/submissions/${selectedSubmission.id}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: selectedSubmission.email,
+          subject: `Re: ${selectedSubmission.songTitle} - Afterglow Music`,
+          message: replyMessage
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Reply error:', errorData)
+        throw new Error(errorData.error || 'Failed to send reply')
+      }
+
+      toast.success('Reply sent successfully! 📧')
+      
+      // Auto-update status to "reviewed" after sending reply
+      if (selectedSubmission.status === 'pending') {
+        await handleUpdateStatus(selectedSubmission.id, 'reviewed')
+      }
+      
+      setShowReplyForm(false)
+      setSelectedSubmission(null)
+      setReplyMessage('')
+      
+      // Reload submissions to sync any changes
+      await loadSubmissions()
+    } catch (error: any) {
+      console.error('Failed to send reply:', error)
+      toast.error(`Failed to send reply: ${error.message}`)
+    } finally {
+      setSendingReply(false)
+    }
+  }
+
+  const handleUpdateStatus = async (id: number, status: string) => {
+    setUpdatingStatus(id)
+    setOpenStatusDropdown(null) // Close dropdown
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL.replace('/api', '')
+      const response = await fetch(`${apiUrl}/api/submissions/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+
+      if (!response.ok) throw new Error('Failed to update status')
+
+      // Update local state immediately for instant feedback
+      setSubmissions(submissions.map(s => s.id === id ? { ...s, status } : s))
+      
+      // Show success toast
+      toast.success(`Status updated to ${status}`)
+      
+      // Reload submissions to ensure sync with database
+      await loadSubmissions()
+    } catch (error) {
+      console.error('Failed to update status:', error)
+      toast.error('Failed to update status')
+      // Reload to revert any optimistic updates
+      await loadSubmissions()
+    } finally {
+      setUpdatingStatus(null)
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, { text: string; icon: JSX.Element; color: string }> = {
+      pending: { 
+        text: 'Pending', 
+        icon: <Clock size={16} />,
+        color: 'pending'
+      },
+      reviewed: { 
+        text: 'Reviewed', 
+        icon: <Eye size={16} />,
+        color: 'reviewed'
+      },
+      accepted: { 
+        text: 'Accepted', 
+        icon: <CheckCircle size={16} />,
+        color: 'accepted'
+      },
+      rejected: { 
+        text: 'Rejected', 
+        icon: <XCircle size={16} />,
+        color: 'rejected'
+      }
+    }
+    return labels[status] || labels.pending
   }
 
   return (
     <div className="admin-container">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#1a1a1a',
+            color: '#fff',
+            borderRadius: '10px',
+            padding: '16px',
+            fontSize: '14px',
+            fontWeight: '600',
+          },
+          success: {
+            iconTheme: {
+              primary: 'var(--primary-color)',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <aside className="admin-sidebar">
         <div className="admin-logo">AFTERGLOW ADMIN</div>
         <nav className="admin-nav">
@@ -329,6 +524,13 @@ const Admin = () => {
           >
             <Newspaper className="nav-icon" size={20} />
             News
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'submissions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('submissions')}
+          >
+            <Mail className="nav-icon" size={20} />
+            Submissions
           </button>
           <button
             className={`nav-item ${activeTab === 'content' ? 'active' : ''}`}
@@ -372,6 +574,7 @@ const Admin = () => {
             {activeTab === 'releases' && 'Manage Releases'}
             {activeTab === 'artists' && 'Manage Artists'}
             {activeTab === 'news' && 'Manage News'}
+            {activeTab === 'submissions' && 'Manage Submissions'}
             {activeTab === 'content' && 'Manage Content'}
             {activeTab === 'settings' && 'Settings'}
           </h1>
@@ -896,6 +1099,174 @@ const Admin = () => {
                           >
                             Delete
                           </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'submissions' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              {showReplyForm && selectedSubmission && (
+                <div className="modal-overlay" onClick={() => setShowReplyForm(false)}>
+                  <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <h2>Reply to {selectedSubmission.fullName}</h2>
+                    <form onSubmit={handleSendReply}>
+                      <div className="form-group">
+                        <label>To: {selectedSubmission.email}</label>
+                      </div>
+                      <div className="form-group">
+                        <label>Subject</label>
+                        <input
+                          type="text"
+                          defaultValue={`Re: ${selectedSubmission.songTitle} - Afterglow Music`}
+                          disabled
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Message</label>
+                        <textarea
+                          rows={10}
+                          value={replyMessage}
+                          onChange={(e) => setReplyMessage(e.target.value)}
+                          placeholder="Write your reply here..."
+                          required
+                        />
+                      </div>
+                      <div className="form-actions">
+                        <button type="button" className="btn-secondary" onClick={() => setShowReplyForm(false)}>
+                          Cancel
+                        </button>
+                        <button type="submit" className="btn-primary" disabled={sendingReply}>
+                          {sendingReply ? 'Sending...' : 'Send Reply'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              <div className="submissions-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Artist Name</th>
+                      <th>Song Title</th>
+                      <th>Email</th>
+                      <th>Genre</th>
+                      <th>Status</th>
+                      <th>Submitted</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {submissions.map((submission) => (
+                      <tr key={submission.id}>
+                        <td>{submission.id}</td>
+                        <td className="artist-name">{submission.artistName}</td>
+                        <td>{submission.songTitle}</td>
+                        <td>{submission.email}</td>
+                        <td>{submission.genre}</td>
+                        <td>
+                          <div className="status-dropdown-wrapper">
+                            <button
+                              className={`status-button status-${submission.status}`}
+                              onClick={() => setOpenStatusDropdown(
+                                openStatusDropdown === submission.id ? null : submission.id
+                              )}
+                              disabled={updatingStatus === submission.id}
+                            >
+                              <span className="status-icon">{getStatusLabel(submission.status).icon}</span>
+                              <span className="status-text">{getStatusLabel(submission.status).text}</span>
+                              <ChevronDown size={14} className="status-arrow" />
+                            </button>
+                            
+                            {openStatusDropdown === submission.id && (
+                              <div className="status-dropdown-menu">
+                                <button
+                                  className="status-option status-pending"
+                                  onClick={() => handleUpdateStatus(submission.id, 'pending')}
+                                >
+                                  <Clock size={16} className="status-icon" />
+                                  <span>Pending</span>
+                                </button>
+                                <button
+                                  className="status-option status-reviewed"
+                                  onClick={() => handleUpdateStatus(submission.id, 'reviewed')}
+                                >
+                                  <Eye size={16} className="status-icon" />
+                                  <span>Reviewed</span>
+                                </button>
+                                <button
+                                  className="status-option status-accepted"
+                                  onClick={() => handleUpdateStatus(submission.id, 'accepted')}
+                                >
+                                  <CheckCircle size={16} className="status-icon" />
+                                  <span>Accepted</span>
+                                </button>
+                                <button
+                                  className="status-option status-rejected"
+                                  onClick={() => handleUpdateStatus(submission.id, 'rejected')}
+                                >
+                                  <XCircle size={16} className="status-icon" />
+                                  <span>Rejected</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td>{new Date(submission.createdAt).toLocaleDateString()}</td>
+                        <td className="actions">
+                          <button
+                            className="btn-view"
+                            onClick={() => {
+                              const details = `
+=== PERSONAL INFO ===
+Name: ${submission.fullName}
+Email: ${submission.email}
+Phone: ${submission.phone}
+DOB: ${submission.dateOfBirth}
+POB: ${submission.placeOfBirth}
+
+=== ARTIST INFO ===
+Artist Name: ${submission.artistName}
+Genre: ${submission.genre}
+Bio: ${submission.bio}
+${submission.catalog ? `Previous Releases: ${submission.catalog}` : ''}
+
+=== SONG INFO ===
+Title: ${submission.songTitle}
+Link: ${submission.songLink}
+${submission.lyrics ? `\nLyrics:\n${submission.lyrics}` : ''}
+${submission.notes ? `\nNotes:\n${submission.notes}` : ''}
+                              `.trim()
+                              alert(details)
+                            }}
+                          >
+                            View
+                          </button>
+                          <button
+                            className="btn-reply"
+                            onClick={() => handleReplySubmission(submission)}
+                          >
+                            Reply
+                          </button>
+                          <a
+                            href={submission.songLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-listen"
+                          >
+                            Listen
+                          </a>
                         </td>
                       </tr>
                     ))}

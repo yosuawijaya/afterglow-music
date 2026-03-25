@@ -610,6 +610,75 @@ export default {
         return jsonResponse({ message: 'Deleted successfully' });
       }
 
+      // ===== REPLY TO SUBMISSION =====
+      if (path.match(/^\/api\/submissions\/\d+\/reply$/) && method === 'POST') {
+        const pathParts = path.split('/');
+        const id = pathParts[3]; // /api/submissions/[ID]/reply
+        
+        console.log('Reply endpoint hit:', { path, id, pathParts });
+        
+        const body = await request.json() as any;
+        
+        console.log('Reply request body:', { to: body.to, subject: body.subject });
+        
+        // Validate required fields
+        if (!body.to || !body.subject || !body.message) {
+          return jsonResponse({ error: 'Missing required fields: to, subject, message' }, 400);
+        }
+        
+        // Check if Resend API key is configured
+        if (!env.RESEND_API_KEY) {
+          console.error('RESEND_API_KEY not configured');
+          return jsonResponse({ error: 'Email service not configured' }, 500);
+        }
+        
+        try {
+          // Send reply email using Resend
+          const resendPayload = {
+            from: 'Afterglow Music <submissions@mamangstudio.web.id>',
+            to: [body.to],
+            subject: body.subject,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="white-space: pre-wrap;">${body.message.replace(/\n/g, '<br>')}</div>
+                
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+                
+                <p style="color: #666; font-size: 14px;">
+                  <strong>Afterglow Music</strong><br>
+                  Independent Record Label<br>
+                  <a href="https://afterglow-music.pages.dev" style="color: #ff6b35;">afterglow-music.pages.dev</a>
+                </p>
+              </div>
+            `,
+          };
+          
+          console.log('Sending to Resend:', { from: resendPayload.from, to: resendPayload.to, subject: resendPayload.subject });
+          
+          const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(resendPayload),
+          });
+
+          const responseText = await response.text();
+          console.log('Resend response:', { status: response.status, body: responseText });
+
+          if (!response.ok) {
+            console.error('Resend API error:', responseText);
+            return jsonResponse({ error: `Failed to send email: ${responseText}` }, 500);
+          }
+
+          return jsonResponse({ message: 'Reply sent successfully', data: JSON.parse(responseText) });
+        } catch (error: any) {
+          console.error('Error sending reply:', error);
+          return jsonResponse({ error: `Exception: ${error.message}` }, 500);
+        }
+      }
+
       // 404 Not Found
       return jsonResponse({ error: 'Not Found' }, 404);
 
