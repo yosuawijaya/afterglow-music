@@ -34,7 +34,8 @@ function jsonResponse(data: any, status = 200) {
 // Helper function to send email notification
 async function sendEmailNotification(env: Env, submission: any) {
   try {
-    const emailHtml = `
+    // Email to admin (notification)
+    const adminEmailHtml = `
       <h2>🎵 New Song Submission Received!</h2>
       
       <h3>Personal Information</h3>
@@ -65,7 +66,37 @@ async function sendEmailNotification(env: Env, submission: any) {
       <p><em>Submitted at: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}</em></p>
     `;
 
-    const response = await fetch('https://api.resend.com/emails', {
+    // Email to artist (confirmation)
+    const artistEmailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #ff6b35;">Hi ${submission.fullName}! 👋</h2>
+        
+        <p>Terima kasih telah mengirimkan demo kamu ke <strong>Afterglow Music</strong>!</p>
+        
+        <p>Kami telah menerima pendaftaran kamu dengan detail sebagai berikut:</p>
+        
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Artist Name:</strong> ${submission.artistName}</p>
+          <p><strong>Song Title:</strong> ${submission.songTitle}</p>
+          <p><strong>Genre:</strong> ${submission.genre}</p>
+        </div>
+        
+        <p>Tim kami akan mendengarkan karya kamu dan akan menghubungi kamu dalam waktu 7-14 hari kerja jika ada ketertarikan untuk kolaborasi lebih lanjut.</p>
+        
+        <p>Keep creating amazing music! 🎵</p>
+        
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+        
+        <p style="color: #666; font-size: 14px;">
+          <strong>Afterglow Music</strong><br>
+          Independent Record Label<br>
+          <a href="https://afterglow-music.pages.dev" style="color: #ff6b35;">afterglow-music.pages.dev</a>
+        </p>
+      </div>
+    `;
+
+    // Send email to admin
+    const adminResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${env.RESEND_API_KEY}`,
@@ -75,12 +106,31 @@ async function sendEmailNotification(env: Env, submission: any) {
         from: 'Afterglow Music <submissions@mamangstudio.web.id>',
         to: [env.NOTIFICATION_EMAIL],
         subject: `🎵 New Submission: ${submission.songTitle} by ${submission.artistName}`,
-        html: emailHtml,
+        html: adminEmailHtml,
       }),
     });
 
-    if (!response.ok) {
-      console.error('Failed to send email:', await response.text());
+    if (!adminResponse.ok) {
+      console.error('Failed to send admin email:', await adminResponse.text());
+    }
+
+    // Send confirmation email to artist
+    const artistResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Afterglow Music <submissions@mamangstudio.web.id>',
+        to: [submission.email],
+        subject: `Terima kasih telah submit ke Afterglow Music! 🎵`,
+        html: artistEmailHtml,
+      }),
+    });
+
+    if (!artistResponse.ok) {
+      console.error('Failed to send artist email:', await artistResponse.text());
     }
   } catch (error) {
     console.error('Error sending email:', error);
@@ -374,6 +424,106 @@ export default {
         ).bind(body.status, id).run();
         
         return jsonResponse({ message: 'Status updated successfully' });
+      }
+
+      // ===== NEWS ENDPOINTS =====
+      if (path === '/api/news' && method === 'GET') {
+        const url = new URL(request.url);
+        const showAll = url.searchParams.get('all') === 'true';
+        
+        let query = 'SELECT * FROM news';
+        if (!showAll) {
+          query += ' WHERE is_published = 1';
+        }
+        query += ' ORDER BY published_at DESC, created_at DESC';
+        
+        const { results } = await env.DB.prepare(query).all();
+        const news = results.map((n: any) => ({
+          id: n.id,
+          title: n.title,
+          slug: n.slug,
+          excerpt: n.excerpt,
+          content: n.content,
+          coverImage: n.cover_image,
+          author: n.author,
+          publishedAt: n.published_at,
+          isPublished: n.is_published === 1,
+          createdAt: n.created_at,
+          updatedAt: n.updated_at
+        }));
+        return jsonResponse(news);
+      }
+
+      if (path.match(/^\/api\/news\/[^\/]+$/) && method === 'GET') {
+        const slug = path.split('/').pop();
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM news WHERE slug = ? AND is_published = 1'
+        ).bind(slug).all();
+        
+        if (results.length === 0) {
+          return jsonResponse({ error: 'News not found' }, 404);
+        }
+        
+        const n = results[0] as any;
+        const news = {
+          id: n.id,
+          title: n.title,
+          slug: n.slug,
+          excerpt: n.excerpt,
+          content: n.content,
+          coverImage: n.cover_image,
+          author: n.author,
+          publishedAt: n.published_at,
+          isPublished: n.is_published === 1,
+          createdAt: n.created_at,
+          updatedAt: n.updated_at
+        };
+        return jsonResponse(news);
+      }
+
+      if (path === '/api/news' && method === 'POST') {
+        const body = await request.json() as any;
+        const result = await env.DB.prepare(
+          'INSERT INTO news (title, slug, excerpt, content, cover_image, author, published_at, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(
+          body.title,
+          body.slug,
+          body.excerpt,
+          body.content,
+          body.coverImage || null,
+          body.author || 'Afterglow Music',
+          body.isPublished ? new Date().toISOString() : null,
+          body.isPublished ? 1 : 0
+        ).run();
+        
+        return jsonResponse({ id: result.meta.last_row_id, ...body }, 201);
+      }
+
+      if (path.match(/^\/api\/news\/\d+$/) && method === 'PUT') {
+        const id = path.split('/').pop();
+        const body = await request.json() as any;
+        
+        await env.DB.prepare(
+          'UPDATE news SET title = ?, slug = ?, excerpt = ?, content = ?, cover_image = ?, author = ?, published_at = ?, is_published = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+        ).bind(
+          body.title,
+          body.slug,
+          body.excerpt,
+          body.content,
+          body.coverImage || null,
+          body.author || 'Afterglow Music',
+          body.isPublished ? (body.publishedAt || new Date().toISOString()) : null,
+          body.isPublished ? 1 : 0,
+          id
+        ).run();
+        
+        return jsonResponse({ id, ...body });
+      }
+
+      if (path.match(/^\/api\/news\/\d+$/) && method === 'DELETE') {
+        const id = path.split('/').pop();
+        await env.DB.prepare('DELETE FROM news WHERE id = ?').bind(id).run();
+        return jsonResponse({ message: 'Deleted successfully' });
       }
 
       // 404 Not Found

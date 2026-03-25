@@ -189,3 +189,43 @@ export const submissionsAPI = {
       body: JSON.stringify({ status }),
     }),
 };
+
+// ===== NEWS API =====
+export interface News {
+  id?: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  coverImage?: string;
+  author?: string;
+  publishedAt?: string;
+  isPublished?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const newsAPI = {
+  getAll: (showAll = false): Promise<News[]> => 
+    fetchAPI(`/news${showAll ? '?all=true' : ''}`),
+  
+  getBySlug: (slug: string): Promise<News> => 
+    fetchAPI(`/news/${slug}`),
+  
+  create: (news: Omit<News, 'id' | 'createdAt' | 'updatedAt'>): Promise<News> =>
+    fetchAPI('/news', {
+      method: 'POST',
+      body: JSON.stringify(news),
+    }),
+  
+  update: (id: number, news: Partial<News>): Promise<News> =>
+    fetchAPI(`/news/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(news),
+    }),
+  
+  delete: (id: number): Promise<{ message: string }> =>
+    fetchAPI(`/news/${id}`, {
+      method: 'DELETE',
+    }),
+};

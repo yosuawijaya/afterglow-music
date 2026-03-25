@@ -8,6 +8,8 @@ import Footer from './components/Footer'
 import Admin from './pages/Admin'
 import Login from './pages/Login'
 import Submit from './pages/Submit'
+import News from './pages/News'
+import NewsDetail from './pages/NewsDetail'
 import NotFound from './pages/NotFound'
 import './App.css'
 
@@ -28,6 +30,20 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/submit" element={<Submit />} />
+        <Route path="/news" element={
+          <>
+            <Navbar />
+            <News />
+            <Footer />
+          </>
+        } />
+        <Route path="/news/:slug" element={
+          <>
+            <Navbar />
+            <NewsDetail />
+            <Footer />
+          </>
+        } />
         <Route path="/" element={
           <div className="app">
             <Navbar />
