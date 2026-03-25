@@ -1,34 +1,44 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Film, Disc, Users, FileText, Settings, ArrowLeft, LogOut } from 'lucide-react'
-import { slidesAPI, releasesAPI, artistsAPI, HeroSlide, Release, Artist } from '../services/api'
+import { Film, Disc, Users, FileText, Settings, ArrowLeft, LogOut, Newspaper } from 'lucide-react'
+import { slidesAPI, releasesAPI, artistsAPI, newsAPI, HeroSlide, Release, Artist, News } from '../services/api'
 import ImageUpload from '../components/ImageUpload'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
 import './Admin.css'
 
 const Admin = () => {
-  const [activeTab, setActiveTab] = useState<'slides' | 'releases' | 'artists' | 'content' | 'settings'>('slides')
+  const [activeTab, setActiveTab] = useState<'slides' | 'releases' | 'artists' | 'news' | 'content' | 'settings'>('slides')
   const [artists, setArtists] = useState<Artist[]>([])
   const [slides, setSlides] = useState<HeroSlide[]>([])
   const [releases, setReleases] = useState<Release[]>([])
+  const [news, setNews] = useState<News[]>([])
   
   const [editingArtist, setEditingArtist] = useState<Artist | null>(null)
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null)
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
+  const [editingNews, setEditingNews] = useState<News | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showSlideForm, setShowSlideForm] = useState(false)
   const [showReleaseForm, setShowReleaseForm] = useState(false)
+  const [showNewsForm, setShowNewsForm] = useState(false)
   
   // Image URLs for forms
   const [slideImageUrl, setSlideImageUrl] = useState('')
   const [slideCoverUrl, setSlideCoverUrl] = useState('')
   const [releaseArtworkUrl, setReleaseArtworkUrl] = useState('')
   const [artistImageUrl, setArtistImageUrl] = useState('')
+  const [newsCoverUrl, setNewsCoverUrl] = useState('')
+  
+  // Rich text editor content
+  const [newsContent, setNewsContent] = useState('')
 
   // Load data on mount
   useEffect(() => {
     if (activeTab === 'slides') loadSlides()
     if (activeTab === 'releases') loadReleases()
     if (activeTab === 'artists') loadArtists()
+    if (activeTab === 'news') loadNews()
   }, [activeTab])
 
   // Load functions
@@ -59,6 +69,16 @@ const Admin = () => {
     } catch (error) {
       console.error('Failed to load artists:', error)
       alert('Failed to load artists. Using local data.')
+    }
+  }
+
+  const loadNews = async () => {
+    try {
+      const data = await newsAPI.getAll(true) // Show all including unpublished
+      setNews(data)
+    } catch (error) {
+      console.error('Failed to load news:', error)
+      alert('Failed to load news.')
     }
   }
 
@@ -191,16 +211,23 @@ const Admin = () => {
       artist: formData.get('artist') as string,
       title: formData.get('title') as string,
       artwork: releaseArtworkUrl || editingRelease?.artwork || '',
-      listenUrl: formData.get('listenUrl') as string
+      listenUrl: formData.get('listenUrl') as string,
+      createNews: formData.get('createNews') === 'on'
     }
 
     try {
       if (editingRelease) {
         const updated = await releasesAPI.update(editingRelease.id, releaseData)
         setReleases(releases.map(r => r.id === editingRelease.id ? updated : r))
+        alert('Release updated successfully!')
       } else {
         const created = await releasesAPI.create(releaseData)
         setReleases([...releases, created])
+        if (releaseData.createNews) {
+          alert('Release and news created successfully!')
+        } else {
+          alert('Release created successfully!')
+        }
       }
       setShowReleaseForm(false)
       setEditingRelease(null)
@@ -208,6 +235,65 @@ const Admin = () => {
     } catch (error) {
       console.error('Failed to save release:', error)
       alert('Failed to save release')
+    }
+  }
+
+  // News handlers
+  const handleDeleteNews = async (id: number) => {
+    if (confirm('Are you sure you want to delete this news?')) {
+      try {
+        await newsAPI.delete(id)
+        setNews(news.filter(n => n.id !== id))
+      } catch (error) {
+        console.error('Failed to delete news:', error)
+        alert('Failed to delete news')
+      }
+    }
+  }
+
+  const handleEditNews = (newsItem: News) => {
+    setEditingNews(newsItem)
+    setNewsCoverUrl(newsItem.coverImage || '')
+    setNewsContent(newsItem.content || '')
+    setShowNewsForm(true)
+  }
+
+  const handleSaveNews = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    
+    const slug = (formData.get('slug') as string) || 
+      (formData.get('title') as string).toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+    
+    const newsData = {
+      title: formData.get('title') as string,
+      slug: slug,
+      excerpt: formData.get('excerpt') as string,
+      content: newsContent, // Use rich text editor content
+      coverImage: newsCoverUrl || editingNews?.coverImage || '',
+      author: formData.get('author') as string || 'Afterglow Music',
+      isPublished: formData.get('isPublished') === 'on'
+    }
+
+    try {
+      if (editingNews) {
+        const updated = await newsAPI.update(editingNews.id!, newsData)
+        setNews(news.map(n => n.id === editingNews.id ? updated : n))
+        alert('News updated successfully!')
+      } else {
+        const created = await newsAPI.create(newsData)
+        setNews([created, ...news])
+        alert('News created successfully!')
+      }
+      setShowNewsForm(false)
+      setEditingNews(null)
+      setNewsCoverUrl('')
+      setNewsContent('')
+    } catch (error) {
+      console.error('Failed to save news:', error)
+      alert('Failed to save news')
     }
   }
 
@@ -236,6 +322,13 @@ const Admin = () => {
           >
             <Users className="nav-icon" size={20} />
             Artists
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'news' ? 'active' : ''}`}
+            onClick={() => setActiveTab('news')}
+          >
+            <Newspaper className="nav-icon" size={20} />
+            News
           </button>
           <button
             className={`nav-item ${activeTab === 'content' ? 'active' : ''}`}
@@ -278,6 +371,7 @@ const Admin = () => {
             {activeTab === 'slides' && 'Manage Hero Slides'}
             {activeTab === 'releases' && 'Manage Releases'}
             {activeTab === 'artists' && 'Manage Artists'}
+            {activeTab === 'news' && 'Manage News'}
             {activeTab === 'content' && 'Manage Content'}
             {activeTab === 'settings' && 'Settings'}
           </h1>
@@ -312,6 +406,19 @@ const Admin = () => {
               }}
             >
               + Add Artist
+            </button>
+          )}
+          {activeTab === 'news' && (
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setEditingNews(null)
+                setNewsContent('')
+                setNewsCoverUrl('')
+                setShowNewsForm(true)
+              }}
+            >
+              + Add News
             </button>
           )}
         </header>
@@ -482,6 +589,25 @@ const Admin = () => {
                         />
                         <small>Link ke Spotify, Apple Music, YouTube, atau platform streaming lainnya</small>
                       </div>
+                      
+                      {!editingRelease && (
+                        <div className="form-group checkbox-group">
+                          <label className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              name="createNews"
+                              defaultChecked={true}
+                              className="checkbox-input"
+                            />
+                            <span className="checkbox-custom"></span>
+                            <span className="checkbox-text">
+                              <strong>Auto-create News Article</strong>
+                              <small>Automatically create a news post with this release cover as the featured image</small>
+                            </span>
+                          </label>
+                        </div>
+                      )}
+                      
                       <div className="form-actions">
                         <button type="button" className="btn-secondary" onClick={() => setShowReleaseForm(false)}>
                           Cancel
@@ -611,6 +737,162 @@ const Admin = () => {
                           <button
                             className="btn-delete"
                             onClick={() => handleDeleteArtist(artist.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'news' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              {showNewsForm && (
+                <div className="modal-overlay" onClick={() => setShowNewsForm(false)}>
+                  <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+                    <h2>{editingNews ? 'Edit News' : 'Add New News'}</h2>
+                    <form onSubmit={handleSaveNews}>
+                      <div className="form-group">
+                        <label>Title</label>
+                        <input
+                          type="text"
+                          name="title"
+                          defaultValue={editingNews?.title}
+                          placeholder="Luna Eclipse - Midnight Dreams Out Now!"
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Slug (URL-friendly)</label>
+                        <input
+                          type="text"
+                          name="slug"
+                          defaultValue={editingNews?.slug}
+                          placeholder="luna-eclipse-midnight-dreams-out-now"
+                        />
+                        <small>Leave empty to auto-generate from title</small>
+                      </div>
+                      <div className="form-group">
+                        <label>Excerpt (Short Description)</label>
+                        <textarea
+                          name="excerpt"
+                          rows={3}
+                          defaultValue={editingNews?.excerpt}
+                          placeholder="Check out the latest release..."
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Content</label>
+                        <ReactQuill 
+                          theme="snow"
+                          value={newsContent || editingNews?.content || ''}
+                          onChange={setNewsContent}
+                          modules={{
+                            toolbar: [
+                              [{ 'header': [1, 2, 3, false] }],
+                              ['bold', 'italic', 'underline', 'strike'],
+                              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                              ['link', 'blockquote'],
+                              ['clean']
+                            ]
+                          }}
+                          placeholder="Write your article content here..."
+                        />
+                      </div>
+                      
+                      <ImageUpload
+                        label="Cover Image"
+                        currentImage={newsCoverUrl || editingNews?.coverImage}
+                        onUpload={(url) => setNewsCoverUrl(url)}
+                      />
+                      
+                      <div className="form-group">
+                        <label>Author</label>
+                        <input
+                          type="text"
+                          name="author"
+                          defaultValue={editingNews?.author || 'Afterglow Music'}
+                          placeholder="Afterglow Music"
+                        />
+                      </div>
+                      
+                      <div className="form-group checkbox-group">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            name="isPublished"
+                            defaultChecked={editingNews?.isPublished !== false}
+                            className="checkbox-input"
+                          />
+                          <span className="checkbox-custom"></span>
+                          <span className="checkbox-text">
+                            <strong>Published</strong>
+                            <small>Uncheck to save as draft</small>
+                          </span>
+                        </label>
+                      </div>
+                      
+                      <div className="form-actions">
+                        <button type="button" className="btn-secondary" onClick={() => {
+                          setShowNewsForm(false)
+                          setNewsContent('')
+                        }}>
+                          Cancel
+                        </button>
+                        <button type="submit" className="btn-primary">
+                          Save
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              <div className="artists-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Title</th>
+                      <th>Slug</th>
+                      <th>Author</th>
+                      <th>Status</th>
+                      <th>Published</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {news.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.id}</td>
+                        <td className="artist-name">{item.title}</td>
+                        <td>{item.slug}</td>
+                        <td>{item.author}</td>
+                        <td>
+                          <span className={`status-badge ${item.isPublished ? 'published' : 'draft'}`}>
+                            {item.isPublished ? 'Published' : 'Draft'}
+                          </span>
+                        </td>
+                        <td>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : '-'}</td>
+                        <td className="actions">
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEditNews(item)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDeleteNews(item.id!)}
                           >
                             Delete
                           </button>

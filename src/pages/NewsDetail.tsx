@@ -3,6 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Calendar, User, ArrowLeft } from 'lucide-react'
 import { newsAPI, News } from '../services/api'
+import VerifiedBadge from '../components/VerifiedBadge'
+import SEO from '../components/SEO'
+import { ArticleStructuredData } from '../components/StructuredData'
 import './NewsDetail.css'
 
 const NewsDetail = () => {
@@ -69,6 +72,29 @@ const NewsDetail = () => {
 
   return (
     <div className="news-detail-page">
+      {news && (
+        <>
+          <SEO 
+            title={`${news.title} - Afterglow Music`}
+            description={news.excerpt}
+            image={news.coverImage}
+            article={true}
+            publishedTime={news.publishedAt}
+            author={news.author}
+            keywords={`${news.title}, afterglow music, berita musik, ${news.author}`}
+          />
+          <ArticleStructuredData
+            title={news.title}
+            description={news.excerpt}
+            image={news.coverImage || ''}
+            datePublished={news.publishedAt || ''}
+            dateModified={news.updatedAt}
+            author={news.author || 'Afterglow Music'}
+            url={`https://afterglow-music.pages.dev/news/${news.slug}`}
+          />
+        </>
+      )}
+      
       <motion.div
         className="news-detail-container"
         initial={{ opacity: 0 }}
@@ -105,7 +131,10 @@ const NewsDetail = () => {
               </span>
               <span className="news-meta-item">
                 <User size={18} />
-                {news.author}
+                <span className="author-with-badge">
+                  {news.author}
+                  <VerifiedBadge author={news.author} size={18} />
+                </span>
               </span>
             </div>
 

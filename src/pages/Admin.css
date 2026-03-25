@@ -450,3 +450,66 @@ td {
   word-break: break-all;
   margin-bottom: 1rem !important;
 }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-badge.published {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.draft {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Larger modal for news editor */
+.modal-large {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Quill editor styling */
+.ql-container {
+  min-height: 300px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.ql-editor {
+  min-height: 300px;
+  padding: 1rem;
+}
+
+.ql-toolbar {
+  background: #f9fafb;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid #e5e7eb;
+}
+
+.ql-container {
+  border-radius: 0 0 8px 8px;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+}
+
+.form-group .ql-editor p {
+  margin-bottom: 1em;
+}
+
+.form-group .ql-editor h1,
+.form-group .ql-editor h2,
+.form-group .ql-editor h3 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+}

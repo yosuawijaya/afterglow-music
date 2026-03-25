@@ -1,0 +1,13 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow admin pages
+Disallow: /admin
+Disallow: /login
+
+# Sitemap location
+Sitemap: https://afterglow-music.pages.dev/sitemap.xml
+
+# Crawl-delay (optional, helps prevent overload)
+Crawl-delay: 1

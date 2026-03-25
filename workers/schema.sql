@@ -65,6 +65,23 @@ CREATE TABLE IF NOT EXISTS submissions (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- News Table
+CREATE TABLE IF NOT EXISTS news (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  excerpt TEXT NOT NULL,
+  content TEXT NOT NULL,
+  cover_image TEXT,
+  author TEXT DEFAULT 'Afterglow Music',
+  published_at DATETIME,
+  is_published INTEGER DEFAULT 1,
+  release_id INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (release_id) REFERENCES releases(id) ON DELETE SET NULL
+);
+
 -- Insert default data
 INSERT INTO hero_slides (artist, title, subtitle, image, cover, order_index) VALUES
   ('ARUMA X SB19', 'MAPA (INDONESIAN VER.)', 'OUT NOW!', 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=80', 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80', 1),

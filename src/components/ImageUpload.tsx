@@ -31,7 +31,12 @@ const ImageUpload = ({ onUpload, currentImage, label }: ImageUploadProps) => {
         publicKey={publicKey}
         onChange={(info) => {
           if (info && info.cdnUrl) {
-            onUpload(info.cdnUrl)
+            // Force convert to JPG with optimization
+            // This ensures ALL formats (including HEIC) become JPG
+            const optimizedUrl = `${info.cdnUrl}-/format/jpeg/-/quality/smart/-/progressive/yes/`
+            console.log('Original URL:', info.cdnUrl)
+            console.log('Optimized URL:', optimizedUrl)
+            onUpload(optimizedUrl)
           }
         }}
         tabs="file url"
@@ -39,9 +44,14 @@ const ImageUpload = ({ onUpload, currentImage, label }: ImageUploadProps) => {
         clearable={true}
         imagesOnly={true}
         locale="en"
+        imageShrink="1920x1920"
+        inputAcceptTypes="image/jpeg,image/jpg,image/png,image/webp"
       />
       <small style={{ display: 'block', marginTop: '0.5rem', color: '#666' }}>
-        Drag & drop image or click to browse
+        Upload JPG, PNG, or WebP. All images will be optimized automatically.
+      </small>
+      <small style={{ display: 'block', marginTop: '0.25rem', color: '#999', fontSize: '0.85em' }}>
+        💡 Tip: If uploading from iPhone, convert HEIC to JPG first in Photos app (Share → Save as JPEG)
       </small>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { releasesAPI, Release } from '../services/api'
 import './Releases.css'
@@ -67,6 +68,9 @@ const Releases = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="section-title">LATEST RELEASES</h2>
+          <Link to="/news" className="view-all-news-btn">
+            View All News →
+          </Link>
         </motion.div>
 
         <div className="releases-carousel-wrapper">

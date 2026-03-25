@@ -149,6 +149,59 @@ export default {
     }
 
     try {
+      // ===== SITEMAP ENDPOINT =====
+      if (path === '/sitemap.xml' && method === 'GET') {
+        const { results: news } = await env.DB.prepare(
+          'SELECT slug, updated_at FROM news WHERE is_published = 1 ORDER BY published_at DESC'
+        ).all()
+
+        const baseUrl = 'https://afterglow-music.pages.dev'
+        const today = new Date().toISOString().split('T')[0]
+
+        let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/news</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/submit</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`
+
+        for (const article of news as any[]) {
+          const lastmod = article.updated_at ? new Date(article.updated_at).toISOString().split('T')[0] : today
+          sitemap += `
+  <url>
+    <loc>${baseUrl}/news/${article.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`
+        }
+
+        sitemap += `
+</urlset>`
+
+        return new Response(sitemap, {
+          headers: {
+            'Content-Type': 'application/xml',
+            'Cache-Control': 'public, max-age=3600',
+            ...corsHeaders,
+          },
+        })
+      }
+
       // ===== IMAGE PROXY ENDPOINT =====
       if (path === '/api/proxy-image' && method === 'GET') {
         const imageUrl = url.searchParams.get('url');
@@ -245,6 +298,8 @@ export default {
 
       if (path === '/api/releases' && method === 'POST') {
         const body = await request.json() as any;
+        
+        // Create release
         const result = await env.DB.prepare(
           'INSERT INTO releases (artist, title, artwork, listen_url, order_index) VALUES (?, ?, ?, ?, ?)'
         ).bind(
@@ -255,7 +310,36 @@ export default {
           body.order_index || 0
         ).run();
         
-        return jsonResponse({ id: result.meta.last_row_id, ...body }, 201);
+        const releaseId = result.meta.last_row_id;
+        
+        // Auto-create news if checkbox is checked
+        if (body.createNews) {
+          const slug = `${body.artist}-${body.title}`.toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+          
+          const newsTitle = `${body.artist} - ${body.title} Out Now!`;
+          const newsExcerpt = `Check out the latest release from ${body.artist}: "${body.title}". Available now on all streaming platforms!`;
+          const newsContent = `<p>We're excited to announce the release of <strong>"${body.title}"</strong> by <strong>${body.artist}</strong>!</p>
+<p>This latest track showcases ${body.artist}'s unique sound and artistic vision. Listen now on your favorite streaming platform.</p>
+<p><a href="${body.listenUrl}" target="_blank" rel="noopener noreferrer">🎵 Listen Now</a></p>`;
+          
+          await env.DB.prepare(
+            'INSERT INTO news (title, slug, excerpt, content, cover_image, author, published_at, is_published, release_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).bind(
+            newsTitle,
+            slug,
+            newsExcerpt,
+            newsContent,
+            body.artwork,
+            'Afterglow Music',
+            new Date().toISOString(),
+            1,
+            releaseId
+          ).run();
+        }
+        
+        return jsonResponse({ id: releaseId, ...body }, 201);
       }
 
       if (path.match(/^\/api\/releases\/\d+$/) && method === 'PUT') {
