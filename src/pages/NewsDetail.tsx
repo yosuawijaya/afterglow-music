@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Calendar, User, ArrowLeft } from 'lucide-react'
 import { newsAPI, News } from '../services/api'
@@ -10,7 +10,6 @@ import './NewsDetail.css'
 
 const NewsDetail = () => {
   const { slug } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
   const [news, setNews] = useState<News | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
